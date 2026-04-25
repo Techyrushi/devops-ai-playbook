@@ -1,0 +1,40 @@
+# Enforce LF line endings for files that run inside Linux containers or Unix shells.
+# Without this, Windows clients can silently convert LF -> CRLF on checkout, which
+# breaks shebangs like `#!/bin/bash` (interpreted as `/bin/bash\r`) inside Docker.
+
+*           text=auto eol=lf
+
+# Shell / init scripts — MUST be LF.
+*.sh        text eol=lf
+*.bash      text eol=lf
+
+# Dockerfiles and entrypoints executed in Linux containers.
+Dockerfile  text eol=lf
+*.Dockerfile text eol=lf
+.dockerignore text eol=lf
+
+# YAML / JSON / TOML configs consumed by Linux tooling (k8s, docker-compose, CI).
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.json      text eol=lf
+*.toml      text eol=lf
+
+# SQL and env files.
+*.sql       text eol=lf
+.env*       text eol=lf
+
+# Windows-specific scripts keep CRLF.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binary files — never normalize.
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
+*.tar       binary
