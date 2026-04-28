@@ -80,7 +80,6 @@ const Home: React.FC = () => {
                     component="h1"
                     sx={{
                       fontWeight: 700,
-                      color: 'white',
                       mb: 3,
                       fontSize: { xs: '2.5rem', md: '3.5rem' },
                     }}
