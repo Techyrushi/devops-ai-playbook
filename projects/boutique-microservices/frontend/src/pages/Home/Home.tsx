@@ -3,16 +3,12 @@ import {
   Container,
   Typography,
   Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
   Button,
   Box,
   Paper,
-  IconButton,
   Fade,
   Slide,
+  Chip,
 } from '@mui/material';
 import {
   ArrowForward as ArrowForwardIcon,
@@ -21,6 +17,8 @@ import {
   LocalShipping as ShippingIcon,
   Security as SecurityIcon,
   Refresh as RefreshIcon,
+  Verified as VerifiedIcon,
+  SupportAgent as SupportAgentIcon,
 } from '@mui/icons-material';
 import { productService } from '../../services/productService';
 import { Product } from '../../types';
@@ -65,7 +63,7 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #1a1a1a 0%, #424242 100%)',
+          background: 'linear-gradient(135deg, #1e3a5f 0%, #2f517d 100%)',
           color: 'white',
           py: { xs: 8, md: 12 },
           position: 'relative',
@@ -82,12 +80,13 @@ const Home: React.FC = () => {
                     component="h1"
                     sx={{
                       fontWeight: 700,
+                      color: 'white',
                       mb: 3,
                       fontSize: { xs: '2.5rem', md: '3.5rem' },
                     }}
                   >
                     Discover Timeless
-                    <Box component="span" sx={{ color: '#d4af37' }}>
+                    <Box component="span" sx={{ color: '#f0d29b' }}>
                       {' '}Elegance
                     </Box>
                   </Typography>
@@ -104,6 +103,20 @@ const Home: React.FC = () => {
                     Indulge in our curated collection of luxury products, 
                     where sophistication meets exceptional quality.
                   </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+                    <Chip
+                      icon={<VerifiedIcon />}
+                      label="Authenticity Guaranteed"
+                      sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
+                      variant="outlined"
+                    />
+                    <Chip
+                      icon={<SupportAgentIcon />}
+                      label="24/7 Concierge Support"
+                      sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
+                      variant="outlined"
+                    />
+                  </Box>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     <Button
                       variant="contained"
@@ -111,12 +124,12 @@ const Home: React.FC = () => {
                       endIcon={<ShoppingBagIcon />}
                       href="/products"
                       sx={{
-                        backgroundColor: '#d4af37',
-                        color: '#1a1a1a',
+                        backgroundColor: '#f0d29b',
+                        color: '#142943',
                         px: 4,
                         py: 1.5,
                         '&:hover': {
-                          backgroundColor: '#b8941f',
+                          backgroundColor: '#d9a441',
                         },
                       }}
                     >
@@ -149,7 +162,7 @@ const Home: React.FC = () => {
                 <Box
                   sx={{
                     height: { xs: 300, md: 400 },
-                    background: 'linear-gradient(45deg, #d4af37 0%, #f4e5c2 100%)',
+                    background: 'linear-gradient(45deg, #d9a441 0%, #f0d29b 100%)',
                     borderRadius: 4,
                     display: 'flex',
                     alignItems: 'center',
@@ -162,7 +175,7 @@ const Home: React.FC = () => {
                     variant="h2"
                     sx={{
                       fontFamily: '"Playfair Display", serif',
-                      color: '#1a1a1a',
+                      color: '#142943',
                       textAlign: 'center',
                       p: 4,
                     }}
@@ -178,9 +191,48 @@ const Home: React.FC = () => {
         </Container>
       </Box>
 
+      {/* Stats Section */}
+      <Container maxWidth="lg">
+        <Grid
+          container
+          spacing={2}
+          sx={{
+            mt: -4,
+            position: 'relative',
+            zIndex: 2,
+          }}
+        >
+          {[
+            { label: 'Happy Customers', value: '25K+' },
+            { label: 'Premium Brands', value: '160+' },
+            { label: 'Countries Delivered', value: '40+' },
+            { label: 'Average Rating', value: '4.9/5' },
+          ].map((item) => (
+            <Grid key={item.label} size={{ xs: 6, md: 3 }}>
+              <Paper
+                elevation={3}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 3,
+                  textAlign: 'center',
+                  height: '100%',
+                }}
+              >
+                <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 700 }}>
+                  {item.value}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {item.label}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
       {/* Features Section */}
       <Container maxWidth="lg">
-        <Box sx={{ py: 8 }}>
+        <Box sx={{ py: 8, mt: { xs: 1, md: 2 } }}>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper
@@ -194,7 +246,7 @@ const Home: React.FC = () => {
                   alignItems: 'center',
                 }}
               >
-                <ShippingIcon sx={{ fontSize: 48, color: '#d4af37', mb: 2 }} />
+                <ShippingIcon sx={{ fontSize: 48, color: 'secondary.main', mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
                   Free Shipping
                 </Typography>
@@ -215,7 +267,7 @@ const Home: React.FC = () => {
                   alignItems: 'center',
                 }}
               >
-                <SecurityIcon sx={{ fontSize: 48, color: '#d4af37', mb: 2 }} />
+                <SecurityIcon sx={{ fontSize: 48, color: 'secondary.main', mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
                   Secure Payment
                 </Typography>
@@ -236,7 +288,7 @@ const Home: React.FC = () => {
                   alignItems: 'center',
                 }}
               >
-                <StarIcon sx={{ fontSize: 48, color: '#d4af37', mb: 2 }} />
+                <StarIcon sx={{ fontSize: 48, color: 'secondary.main', mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
                   Premium Quality
                 </Typography>
@@ -257,7 +309,7 @@ const Home: React.FC = () => {
                   alignItems: 'center',
                 }}
               >
-                <RefreshIcon sx={{ fontSize: 48, color: '#d4af37', mb: 2 }} />
+                <RefreshIcon sx={{ fontSize: 48, color: 'secondary.main', mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
                   Easy Returns
                 </Typography>
@@ -270,8 +322,75 @@ const Home: React.FC = () => {
         </Box>
       </Container>
 
+      {/* Curated Collections */}
+      <Container maxWidth="lg">
+        <Box sx={{ pb: 8 }}>
+          <Typography variant="h4" sx={{ mb: 1 }}>
+            Curated Collections
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Explore trend-focused edits handcrafted by our stylists.
+          </Typography>
+          <Grid container spacing={3}>
+            {[
+              {
+                title: 'Executive Essentials',
+                description: 'Refined looks for boardroom confidence.',
+                tone: 'linear-gradient(135deg, #1f2937 0%, #374151 100%)',
+              },
+              {
+                title: 'Weekend Statements',
+                description: 'Relaxed luxury for modern lifestyles.',
+                tone: 'linear-gradient(135deg, #4b5563 0%, #6b7280 100%)',
+              },
+              {
+                title: 'Evening Signature',
+                description: 'Bold pieces designed to stand out.',
+                tone: 'linear-gradient(135deg, #7c2d12 0%, #9a3412 100%)',
+              },
+            ].map((collection) => (
+              <Grid key={collection.title} size={{ xs: 12, md: 4 }}>
+                <Paper
+                  sx={{
+                    p: 3,
+                    borderRadius: 4,
+                    color: 'white',
+                    background: collection.tone,
+                    minHeight: 210,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h5" sx={{ mb: 1 }}>
+                      {collection.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {collection.description}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    href="/products"
+                    sx={{
+                      alignSelf: 'flex-start',
+                      mt: 2,
+                      borderColor: 'rgba(255,255,255,0.6)',
+                      color: 'white',
+                    }}
+                  >
+                    Explore
+                  </Button>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Container>
+
       {/* Featured Products Section */}
-      <Box sx={{ backgroundColor: '#f8f8f8', py: 8 }} id="featured">
+      <Box sx={{ backgroundColor: '#eef2f8', py: 8 }} id="featured">
         <Container maxWidth="lg">
           <Box sx={{ textAlign: 'center', mb: 6 }}>
             <Typography
@@ -314,6 +433,81 @@ const Home: React.FC = () => {
           </Box>
         </Container>
       </Box>
+
+      {/* Testimonials and CTA */}
+      <Container maxWidth="lg">
+        <Box sx={{ py: 8 }}>
+          <Grid container spacing={3}>
+            {[
+              {
+                quote:
+                  'The delivery was incredibly fast and the quality exceeded expectations.',
+                name: 'Ava R.',
+              },
+              {
+                quote:
+                  'Feels like a premium in-store experience, but online and effortless.',
+                name: 'Noah K.',
+              },
+            ].map((testimonial, index) => (
+              <Grid size={{ xs: 12, md: 6 }} key={testimonial.name}>
+                <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
+                  <Box sx={{ display: 'flex', mb: 1 }}>
+                    {[...Array(5)].map((_, starIndex) => (
+                      <StarIcon
+                        key={`${testimonial.name}-${starIndex}`}
+                        sx={{ color: 'secondary.main', fontSize: 20 }}
+                      />
+                    ))}
+                  </Box>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    "{testimonial.quote}"
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {testimonial.name}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Paper
+            sx={{
+              mt: 4,
+              p: { xs: 3, md: 4 },
+              borderRadius: 4,
+              background: 'linear-gradient(135deg, #1e3a5f 0%, #2f517d 100%)',
+              color: 'white',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', md: 'center' },
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="h5" sx={{ mb: 1 }}>
+                Ready to elevate your wardrobe?
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Join thousands of customers discovering curated premium style daily.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              size="large"
+              href="/register"
+              sx={{
+                backgroundColor: '#f0d29b',
+                color: '#142943',
+                '&:hover': { backgroundColor: '#d9a441' },
+              }}
+            >
+              Create Account
+            </Button>
+          </Paper>
+        </Box>
+      </Container>
     </>
   );
 };

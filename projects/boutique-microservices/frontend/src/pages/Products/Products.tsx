@@ -3,43 +3,40 @@ import {
   Container,
   Typography,
   Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
   Button,
-  TextField,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Box,
-  Chip,
   Drawer,
-  useMediaQuery,
   IconButton,
-  Fab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  Divider,
+  Paper,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
   Close as CloseIcon,
-  Sort as SortIcon,
   ViewList as ViewListIcon,
   ViewModule as ViewModuleIcon,
+  Favorite as FavoriteIcon,
 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 import { productService } from '../../services/productService';
 import { Product } from '../../types';
 import { useCart } from '../../contexts/CartContext';
 import ProductCard from '../../components/common/ProductCard';
 import SearchBar from '../../components/common/SearchBar';
-import FilterPanel from '../../components/common/FilterPanel';
+import FilterPanel, { FilterOptions } from '../../components/common/FilterPanel';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 
 const Products: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +44,12 @@ const Products: React.FC = () => {
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [activeFilters, setActiveFilters] = useState<FilterOptions | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const { addItem } = useCart();
+  const wishlistStorageKey = 'boutique_wishlist';
 
   const categories = [
     'clothing',
@@ -98,6 +100,24 @@ const Products: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const persistedWishlist = localStorage.getItem(wishlistStorageKey);
+    if (persistedWishlist) {
+      try {
+        const parsed = JSON.parse(persistedWishlist);
+        if (Array.isArray(parsed)) {
+          setWishlist(parsed);
+        }
+      } catch (error) {
+        console.warn('[Products] Could not parse wishlist from storage');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(wishlistStorageKey, JSON.stringify(wishlist));
+  }, [wishlist]);
+
+  useEffect(() => {
     let filtered = products;
 
     if (searchQuery) {
@@ -108,7 +128,30 @@ const Products: React.FC = () => {
       );
     }
 
-    // Apply sorting
+    if (activeFilters?.priceRange) {
+      filtered = filtered.filter(
+        (product) =>
+          product.price >= activeFilters.priceRange[0] &&
+          product.price <= activeFilters.priceRange[1]
+      );
+    }
+
+    if (activeFilters?.category) {
+      filtered = filtered.filter((product) => product.category === activeFilters.category);
+    }
+
+    if (activeFilters?.brand && activeFilters.brand.length > 0) {
+      filtered = filtered.filter((product) => product.brand && activeFilters.brand.includes(product.brand));
+    }
+
+    if (activeFilters?.rating) {
+      filtered = filtered.filter((product) => (product.rating || 0) >= activeFilters.rating);
+    }
+
+    if (activeFilters?.inStock) {
+      filtered = filtered.filter((product) => (product.inventory_quantity ?? product.inventory ?? 0) > 0);
+    }
+
     filtered = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'price-low':
@@ -125,58 +168,23 @@ const Products: React.FC = () => {
     });
 
     setFilteredProducts(filtered);
-  }, [products, searchQuery, sortBy]);
+  }, [products, searchQuery, sortBy, activeFilters]);
 
-  const handleFilterChange = (filters: any) => {
-    let filtered = products;
+  const handleFilterChange = (filters: FilterOptions) => {
+    setActiveFilters(filters);
+  };
 
-    // Apply filters
-    if (filters.priceRange) {
-      filtered = filtered.filter(product => 
-        product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
-      );
-    }
+  const handleWishlistToggle = (productId: string) => {
+    const isAdded = !wishlist.includes(productId);
+    setWishlist((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+    );
+    setSnackbarMessage(isAdded ? 'Added to wishlist' : 'Removed from wishlist');
+  };
 
-    if (filters.category) {
-      filtered = filtered.filter(product => product.category === filters.category);
-    }
-
-    if (filters.brand && filters.brand.length > 0) {
-      filtered = filtered.filter(product => 
-        filters.brand.includes(product.brand)
-      );
-    }
-
-    if (filters.inStock) {
-      filtered = filtered.filter(product => product.inventory > 0);
-    }
-
-    // Apply search query
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'newest':
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredProducts(filtered);
+  const formatPrice = (price: number | string) => {
+    const parsed = typeof price === 'string' ? parseFloat(price) : price;
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00';
   };
 
   if (loading) {
@@ -190,29 +198,58 @@ const Products: React.FC = () => {
   }
 
   const maxPrice = Math.max(...products.map(p => p.price), 1000);
+  const searchSuggestions = products.slice(0, 40).map((p) => p.name);
+  const wishlistCount = wishlist.length;
 
   const mainContent = (
     <Box sx={{ flexGrow: 1 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1.5,
+        }}
+      >
         <Typography variant="h3" component="h1" gutterBottom>
           All Products
         </Typography>
-        <Typography variant="h6" color="text.secondary">
-          {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'} Found
-        </Typography>
+        <Stack direction="row" spacing={2}>
+          <Typography variant="h6" color="text.secondary">
+            {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'} Found
+          </Typography>
+          <Typography variant="h6" color="secondary.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
+            <FavoriteIcon fontSize="small" />
+            {wishlistCount} Saved
+          </Typography>
+        </Stack>
       </Box>
 
       {/* Search and Controls */}
-      <Box sx={{ mb: 4, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <Box sx={{ flexGrow: 1, minWidth: 300 }}>
+      <Paper
+        variant="outlined"
+        sx={{
+          mb: 4,
+          p: 2,
+          borderRadius: 3,
+          display: 'flex',
+          gap: 2,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
+        <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', md: 280 } }}>
           <SearchBar
             onSearch={setSearchQuery}
+            suggestions={searchSuggestions}
             placeholder="Search luxury products..."
           />
         </Box>
         
-        <FormControl sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: 170 }}>
           <InputLabel>Sort By</InputLabel>
           <Select
             value={sortBy}
@@ -242,16 +279,14 @@ const Products: React.FC = () => {
           </IconButton>
         </Box>
 
-        {!isMobile && (
-          <Button
-            variant="outlined"
-            startIcon={<FilterIcon />}
-            onClick={() => setFilterDrawerOpen(true)}
-          >
-            Filters
-          </Button>
-        )}
-      </Box>
+        <Button
+          variant="outlined"
+          startIcon={<FilterIcon />}
+          onClick={() => setFilterDrawerOpen(true)}
+        >
+          Filters
+        </Button>
+      </Paper>
 
       {/* Products Grid */}
       <Grid container spacing={viewMode === 'list' ? 2 : 4}>
@@ -268,6 +303,9 @@ const Products: React.FC = () => {
             <ProductCard
               product={product}
               onAddToCart={addItem}
+              onToggleWishlist={handleWishlistToggle}
+              isInWishlist={wishlist.includes(product.id)}
+              onQuickView={(selectedProduct) => setQuickViewProduct(selectedProduct)}
               variant={viewMode}
             />
           </Grid>
@@ -279,10 +317,14 @@ const Products: React.FC = () => {
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No products found matching your criteria.
           </Typography>
-          <Button variant="outlined" onClick={() => {
-            setSearchQuery('');
-            setSortBy('featured');
-          }}>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setSearchQuery('');
+              setSortBy('featured');
+              setActiveFilters(null);
+            }}
+          >
             Clear Filters
           </Button>
         </Box>
@@ -293,31 +335,12 @@ const Products: React.FC = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
-        <Grid container spacing={4}>
-          {/* Filter Sidebar for Desktop */}
-          {!isMobile && (
-            <Grid size={{ xs: 12, md: 3 }}>
-              <FilterPanel
-                onFilterChange={handleFilterChange}
-                categories={categories}
-                brands={brands}
-                sizes={sizes}
-                colors={colors}
-                maxPrice={maxPrice}
-              />
-            </Grid>
-          )}
-          
-          {/* Main Content */}
-          <Grid size={{ xs: 12, md: 9 }}>
-            {mainContent}
-          </Grid>
-        </Grid>
+        {mainContent}
       </Box>
 
-      {/* Mobile Filter Drawer */}
+      {/* Filter Drawer */}
       <Drawer
-        anchor="left"
+        anchor="right"
         open={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
         sx={{ '& .MuiDrawer-paper': { width: 300 } }}
@@ -329,10 +352,7 @@ const Products: React.FC = () => {
           </IconButton>
         </Box>
         <FilterPanel
-          onFilterChange={(filters) => {
-            handleFilterChange(filters);
-            setFilterDrawerOpen(false);
-          }}
+          onFilterChange={handleFilterChange}
           categories={categories}
           brands={brands}
           sizes={sizes}
@@ -341,16 +361,87 @@ const Products: React.FC = () => {
         />
       </Drawer>
 
-      {/* Mobile Filter Fab */}
-      {isMobile && (
-        <Fab
-          color="primary"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-          onClick={() => setFilterDrawerOpen(true)}
-        >
-          <FilterIcon />
-        </Fab>
-      )}
+      <Dialog
+        open={Boolean(quickViewProduct)}
+        onClose={() => setQuickViewProduct(null)}
+        fullWidth
+        maxWidth="md"
+      >
+        {quickViewProduct && (
+          <>
+            <DialogTitle sx={{ fontWeight: 700 }}>{quickViewProduct.name}</DialogTitle>
+            <DialogContent dividers>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    component="img"
+                    src={quickViewProduct.imageUrl || '/images/placeholder.svg'}
+                    alt={quickViewProduct.name}
+                    sx={{
+                      width: '100%',
+                      borderRadius: 2,
+                      objectFit: 'cover',
+                      maxHeight: 360,
+                    }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="h5" sx={{ mb: 1 }}>
+                    ${formatPrice(quickViewProduct.price)}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                    {quickViewProduct.description}
+                  </Typography>
+                  <Divider sx={{ my: 2 }} />
+                  <Stack spacing={1}>
+                    <Typography variant="body2">
+                      Category: <strong>{quickViewProduct.category}</strong>
+                    </Typography>
+                    <Typography variant="body2">
+                      Brand: <strong>{quickViewProduct.brand || 'Boutique Select'}</strong>
+                    </Typography>
+                    <Typography variant="body2">
+                      Stock:{' '}
+                      <strong>
+                        {(quickViewProduct.inventory_quantity ?? quickViewProduct.inventory ?? 0) > 0
+                          ? 'In Stock'
+                          : 'Out of Stock'}
+                      </strong>
+                    </Typography>
+                  </Stack>
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <Button onClick={() => setQuickViewProduct(null)}>Close</Button>
+              <Button
+                variant="outlined"
+                onClick={() => handleWishlistToggle(quickViewProduct.id)}
+              >
+                {wishlist.includes(quickViewProduct.id) ? 'Remove from Wishlist' : 'Save to Wishlist'}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => addItem(quickViewProduct)}
+                disabled={(quickViewProduct.inventory_quantity ?? quickViewProduct.inventory ?? 0) <= 0}
+              >
+                Add to Cart
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      <Snackbar
+        open={Boolean(snackbarMessage)}
+        autoHideDuration={2200}
+        onClose={() => setSnackbarMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarMessage('')} severity="success" variant="filled">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
